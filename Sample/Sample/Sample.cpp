@@ -13,7 +13,9 @@ DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_STRING RegistryPath)
 
 	DriverObject->DriverUnload = SampleUnload;
 
-	KdPrint(("loaded\n"));
+	RTL_OSVERSIONINFOW info;
+	RtlGetVersion(&info);
+	KdPrint(("majar: %lu\nminor: %lu\nbuild: %lu\n", info.dwMajorVersion, info.dwMinorVersion, info.dwBuildNumber));
 
 	return STATUS_SUCCESS;
 }
