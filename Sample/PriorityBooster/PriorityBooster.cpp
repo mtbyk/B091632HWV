@@ -1,11 +1,32 @@
 #include <ntddk.h>
+#include "PriorityBoosterCommon.h"
 
 NTSTATUS PriorityBoosterCreateClose(_In_ PDEVICE_OBJECT DeviceObject, _In_ PIRP Irp) {
-	UNREFERENCED_PARAMETER(Irp);
 	UNREFERENCED_PARAMETER(DeviceObject);
+	Irp->IoStatus.Status = STATUS_SUCCESS;
+	Irp->IoStatus.Information = 0;
+	IoCompleteRequest(Irp, IO_NO_INCREMENT);
 	return STATUS_SUCCESS;
 }
 
+NTSTATUS PriorityBoosterDeviceContorol(_In_ PDEVICE_OBJECT DeviceObject, _In_ PIRP Irp) {
+	auto stack = IoGetCurrentIrpStackLocation(Irp);
+	auto status = STATUS_SUCCESS;
+	switch (stack->Parameters.DeviceIoControl.IoControlCode)
+	{
+	case IOCTL_PRIORITY_BOOSTER_SET_PRIORITY:
+		//ˆ—
+		UNREFERENCED_PARAMETER(DeviceObject);
+		break;
+	default:
+		status = STATUS_INVALID_DEVICE_REQUEST;
+		break;
+	}
+	Irp->IoStatus.Status = STATUS_SUCCESS;
+	Irp->IoStatus.Information = 0;
+	IoCompleteRequest(Irp, IO_NO_INCREMENT);
+	return STATUS_SUCCESS;
+};
 void PriorityBoosterUnload(_In_ PDRIVER_OBJECT DriverObject) {
 	UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\PriorityBooster");
 	IoDeleteSymbolicLink(&symLink);
