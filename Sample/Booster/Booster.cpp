@@ -23,7 +23,7 @@ int main(int argc, const char* argv[])
     
 	ThreadData data;
 	data.ThreadId = atoi(argv[1]);
-	data.ThreadId = atoi(argv[2]);
+	data.Priority = atoi(argv[2]);
 
 	DWORD returned;
 	BOOL success = DeviceIoControl(hDevice,
