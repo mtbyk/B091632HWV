@@ -1,0 +1,9 @@
+#pragma once
+
+#define PRIORITY_ZERO_DEVICE 0x8000
+#define IOCTL_GET_BYTES CTL_CODE(PRIORITY_ZERO_DEVICE, 0x800, METHOD_NEITHER, FILE_ANY_ACCESS)
+
+struct Bytes {
+	ULONG ReadBytes = 0;
+	ULONG WriteBytes = 0;
+};
