@@ -3,7 +3,7 @@
 
 #include <windows.h>
 #include <stdio.h>
-#include "../PriorityBooster/PriorityBoosterCommon.h"
+#include "../Zero/ZeroCommon.h"
 
 int Error(const char* message) {
 	printf("%s (error=%d)\n", message, GetLastError());
@@ -39,12 +39,27 @@ int main()
 	}
 
 	BYTE buffer2[1024];
-	ok = ::WriteFile(hDevice, buffer2, sizeof(buffer), &bytes, nullptr);
+	ok = ::WriteFile(hDevice, buffer2, sizeof(buffer2), &bytes, nullptr);
 	if (!ok) {
 		return Error("failed to write");
 	}
-	if (bytes != sizeof(buffer)) {
+	if (bytes != sizeof(buffer2)) {
 		printf("Wrong Number of bytes\n");
+	}
+
+	Bytes data;
+	DWORD returned;
+	BOOL success = DeviceIoControl(hDevice,
+		IOCTL_GET_BYTES,
+		&data, sizeof(data),
+		nullptr, 0,
+		&returned, nullptr);
+	if (success) {
+		printf("Read %ld  bytes\n", data.ReadBytes);
+		printf("Write %ld  bytes\n", data.WriteBytes);
+	}
+	else {
+		Error("Get bytes failed");
 	}
 
 	::CloseHandle(hDevice);
