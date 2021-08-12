@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "../StaticCommonLib/pch.h"
 #include "ZeroCommon.h"
 #define DRIVER_PREFIX "Zero: "
 
