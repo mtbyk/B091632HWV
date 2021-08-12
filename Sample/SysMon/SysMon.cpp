@@ -36,6 +36,32 @@ void OnProcessNotify(PEPROCESS Process, HANDLE ProcessId, PPS_CREATE_NOTIFY_INFO
 	}
 }
 
+int GetMaxRecordCount() {
+	int defaultMaxCount = 1024;
+	auto status = STATUS_SUCCESS;
+	UNICODE_STRING valName= RTL_CONSTANT_STRING(L"maxCount");
+	UNICODE_STRING regPath = RTL_CONSTANT_STRING(L"\\REGISTRY\\MACHINE\\SOFTWARE\\SysMon\\");
+	OBJECT_ATTRIBUTES objectAttributes;
+
+	InitializeObjectAttributes(&objectAttributes, &regPath, 0, NULL, NULL);
+	HANDLE hkey;
+	do {
+		status = ZwOpenKey(&hkey, KEY_READ, &objectAttributes);
+		if (!NT_SUCCESS(status)) {
+			break;
+		}
+		ULONG size = 0;
+		status = ZwQueryValueKey(&hkey, &valName, KeyValueBasicInformation, NULL, 0, &size);
+		if (!NT_SUCCESS(status)) {
+			break;
+		}
+		//TODO サイズ，型の検証
+
+	} while (false);
+	if (!NT_SUCCESS(status)) {
+		return 1024;
+	}
+}
 
 extern "C" NTSTATUS
 
