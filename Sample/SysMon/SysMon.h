@@ -10,5 +10,6 @@ template<typename T> struct FullItem {
 struct Globals {
 	LIST_ENTRY ItemsHead;
 	int ItemCount;
+	int MaxItemCount;
 	FastMutex Mutex;
 };

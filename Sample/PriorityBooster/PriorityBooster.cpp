@@ -2,7 +2,6 @@
 #include <ntddk.h>
 #include "PriorityBoosterCommon.h"
 
-_Use_decl_annotations_
 NTSTATUS PriorityBoosterCreateClose(_In_ PDEVICE_OBJECT DeviceObject, _In_ PIRP Irp) {
 	KdPrint(("create\n"));
 	UNREFERENCED_PARAMETER(DeviceObject);
@@ -12,7 +11,6 @@ NTSTATUS PriorityBoosterCreateClose(_In_ PDEVICE_OBJECT DeviceObject, _In_ PIRP 
 	return STATUS_SUCCESS;
 }
 
-_Use_decl_annotations_
 NTSTATUS PriorityBoosterDeviceContorol(_In_ PDEVICE_OBJECT DeviceObject, _In_ PIRP Irp) {
 	UNREFERENCED_PARAMETER(DeviceObject);
 	auto stack = IoGetCurrentIrpStackLocation(Irp);
@@ -54,6 +52,7 @@ NTSTATUS PriorityBoosterDeviceContorol(_In_ PDEVICE_OBJECT DeviceObject, _In_ PI
 	IoCompleteRequest(Irp, IO_NO_INCREMENT);
 	return STATUS_SUCCESS;
 };
+
 void PriorityBoosterUnload(_In_ PDRIVER_OBJECT DriverObject) {
 	UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\PriorityBooster");
 	IoDeleteSymbolicLink(&symLink);
