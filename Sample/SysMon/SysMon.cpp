@@ -20,7 +20,33 @@ void PushItem(LIST_ENTRY* entry) {
 void OnProcessNotify(PEPROCESS Process, HANDLE ProcessId, PPS_CREATE_NOTIFY_INFO CreateInfo) {
 	UNREFERENCED_PARAMETER(Process);
 	if (CreateInfo) {
+		USHORT allocSize = sizeof(FullItem<ProcessCreateInfo>);
+	    USHORT commandLineSize = 0;
+		if (CreateInfo->CommandLine) {
+			commandLineSize = CreateInfo->CommandLine->Length;
+			allocSize += commandLineSize;
+		}
+		auto info = (FullItem<ProcessCreateInfo>*)ExAllocatePoolWithTag(PagedPool, allocSize, (ULONG)DRIVER_TAG);
+		if (info == nullptr) {
+			KdPrint((DRIVER_PREFIX"failed to allocation\n"));
+			return;
+		}
+		auto& item = info->Data;
+		KeQuerySystemTime(&item.Time);
+		item.Type = ItemType::ProcessCreate;
+		item.Size = sizeof(ProcessCreateInfo) + commandLineSize;
+		item.ProcessId = HandleToUlong(ProcessId);
+		item.ParentProcessId = HandleToUlong(CreateInfo->ParentProcessId);
 
+		if (commandLineSize > 0) {
+			::memcpy((UCHAR*)&item + sizeof(item), CreateInfo->CommandLine->Buffer, commandLineSize);
+			item.CommandLineLength = commandLineSize / sizeof(WCHAR);
+			item.CommandLineOffset = sizeof(item);
+		}
+		else {
+			item.CommandLineLength = 0;
+		}
+		PushItem(&info->Entry);
 	}
 	else {
 		auto info = (FullItem<ProcessExitInfo>*)ExAllocatePoolWithTag(PagedPool, sizeof(FullItem<ProcessExitInfo>), (ULONG)DRIVER_TAG);
@@ -30,6 +56,7 @@ void OnProcessNotify(PEPROCESS Process, HANDLE ProcessId, PPS_CREATE_NOTIFY_INFO
 		}
 		auto& item = info->Data;
 		KeQuerySystemTime(&item.Time);
+		item.Type = ItemType::ProcessExit;
 		item.ProcessId = HandleToUlong(ProcessId);
 		item.Size = sizeof(ProcessExitInfo);
 

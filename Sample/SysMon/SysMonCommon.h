@@ -15,3 +15,9 @@ struct ProcessExitInfo : ItemHeader {
 	ULONG ProcessId;
 };
 
+struct ProcessCreateInfo : ItemHeader {
+	ULONG ProcessId;
+	ULONG ParentProcessId;
+	USHORT CommandLineLength;
+	USHORT CommandLineOffset;
+};
