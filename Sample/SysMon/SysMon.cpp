@@ -73,12 +73,55 @@ void OnProcessNotify(PEPROCESS Process, HANDLE ProcessId, PPS_CREATE_NOTIFY_INFO
 	}
 }
 
+NTSTATUS SysMonRead(PDEVICE_OBJECT, PIRP Irp) {
+	auto stack = IoGetCurrentIrpStackLocation(Irp);
+	auto len = stack->Parameters.Read.Length;
+	auto status = STATUS_SUCCESS;
+	auto count = 0;
+	NT_ASSERT(Irp->MdlAddress);
+	auto buffer = (UCHAR*)MmGetSystemAddressForMdlSafe(Irp->MdlAddress, NormalPagePriority);
+	if (!buffer) {
+		status = STATUS_INSUFFICIENT_RESOURCES;
+	}
+	else {
+		AutoLock<FastMutex> lock(g_Globals.Mutex);
+		while (true) {
+			if (IsListEmpty(&g_Globals.ItemsHead)) {
+				break;
+			}
+			auto entry = RemoveHeadList(&g_Globals.ItemsHead);
+			auto info = CONTAINING_RECORD(entry, FullItem<ItemHeader>, Entry);
+			auto size = info->Data.Size;
+			if (len < size) {
+				InsertHeadList(&g_Globals.ItemsHead, entry);
+				break;
+			}
+			g_Globals.ItemCount--;
+			::memcpy(buffer, &info->Data, size);
+			len -= size;
+			buffer += size;
+			count += size;
+			ExFreePool(info);
+		}
+	}
+	Irp->IoStatus.Status = status;
+	Irp->IoStatus.Information = count;
+	IoCompleteRequest(Irp, 0);
+	return status;
+}
+
 void SysMonUnload(_In_ PDRIVER_OBJECT DriverObject) {
+	PsSetCreateProcessNotifyRoutineEx(OnProcessNotify, TRUE);
+
 	UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\sysmon");
 	IoDeleteSymbolicLink(&symLink);
 	IoDeleteDevice(DriverObject->DeviceObject);
 	//TODO ListEntry‚Ì”jŠü
 
+	while (!IsListEmpty(&g_Globals.ItemsHead)) {
+		auto entry = RemoveHeadList(&g_Globals.ItemsHead);
+		ExFreePool(CONTAINING_RECORD(entry, FullItem<ItemHeader>, Entry));
+	}
 	KdPrint(("unloaded\n"));
 }
 
