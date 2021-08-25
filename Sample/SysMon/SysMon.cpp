@@ -22,10 +22,14 @@ void OnProcessNotify(PEPROCESS Process, HANDLE ProcessId, PPS_CREATE_NOTIFY_INFO
 	if (CreateInfo) {
 		USHORT allocSize = sizeof(FullItem<ProcessCreateInfo>);
 	    USHORT commandLineSize = 0;
+		USHORT imageFileSize = 0;
 		if (CreateInfo->CommandLine) {
 			commandLineSize = CreateInfo->CommandLine->Length;
-			allocSize += commandLineSize;
 		}
+		if (CreateInfo->ImageFileName) {
+			imageFileSize = CreateInfo->ImageFileName->Length;
+		}
+		allocSize = commandLineSize + imageFileSize;
 		auto info = (FullItem<ProcessCreateInfo>*)ExAllocatePoolWithTag(PagedPool, allocSize, (ULONG)DRIVER_TAG);
 		if (info == nullptr) {
 			KdPrint((DRIVER_PREFIX"failed to allocation\n"));
@@ -34,7 +38,7 @@ void OnProcessNotify(PEPROCESS Process, HANDLE ProcessId, PPS_CREATE_NOTIFY_INFO
 		auto& item = info->Data;
 		KeQuerySystemTime(&item.Time);
 		item.Type = ItemType::ProcessCreate;
-		item.Size = sizeof(ProcessCreateInfo) + commandLineSize;
+		item.Size = sizeof(ProcessCreateInfo) + commandLineSize + imageFileSize;
 		item.ProcessId = HandleToUlong(ProcessId);
 		item.ParentProcessId = HandleToUlong(CreateInfo->ParentProcessId);
 
@@ -45,6 +49,11 @@ void OnProcessNotify(PEPROCESS Process, HANDLE ProcessId, PPS_CREATE_NOTIFY_INFO
 		}
 		else {
 			item.CommandLineLength = 0;
+		}
+		if (imageFileSize > 0) {
+			::memcpy((UCHAR*)&item + sizeof(item) + commandLineSize, CreateInfo->ImageFileName->Buffer, imageFileSize);
+			item.ImageFileNameLength = imageFileSize / sizeof(WCHAR);
+			item.ImageFileNameOffset = sizeof(item) + commandLineSize;
 		}
 		PushItem(&info->Entry);
 	}

@@ -20,4 +20,6 @@ struct ProcessCreateInfo : ItemHeader {
 	ULONG ParentProcessId;
 	USHORT CommandLineLength;
 	USHORT CommandLineOffset;
+	USHORT ImageFileNameLength;
+	USHORT ImageFileNameOffset;
 };
